@@ -7,7 +7,7 @@ app.secret_key = 'super_secret_key'
 
 db_config = {
     'user': 'root',
-    'password': '0523',
+    'password': 'YOUR-PASSWORD', # Enter your local DB password here!
     'host': 'localhost',
     'database': 'hotel_project'
 }
@@ -23,7 +23,6 @@ def index():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # 获取房间列表
     query = """
         SELECT r.room_number, t.type_name, t.price, t.description 
         FROM Rooms r
