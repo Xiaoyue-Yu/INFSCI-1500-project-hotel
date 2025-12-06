@@ -98,6 +98,63 @@
         </div>
     </div>
 
+    <!-- Room Price Management -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 section-title">💰 Room Price Management</h5>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show py-2 mb-3">{{ message }}
+                                    <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Room Type Name</th>
+                                    <th>Current Price ($)</th>
+                                    <th>Description</th>
+                                    <th style="width: 250px;">Update Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type in all_room_types %}
+                                <tr>
+                                    <td>{{ type.type_id }}</td>
+                                    <td><strong>{{ type.type_name }}</strong></td>
+                                    <td class="text-primary fw-bold">${{ type.price }}</td>
+                                    <td class="text-muted small">{{ type.description }}</td>
+                                    <td>
+                                        <form action="/admin/update_price" method="POST" class="d-flex gap-2">
+                                            <input type="hidden" name="type_id" value="{{ type.type_id }}">
+                                            <input type="number" step="0.01" min="0" name="new_price" 
+                                                   class="form-control form-control-sm" 
+                                                   value="{{ type.price }}" required>
+                                            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-center text-muted">No room types found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Popular types + Recent bookings -->
     <div class="row g-3">
         <div class="col-lg-6">
