@@ -487,6 +487,10 @@ def dashboard():
     """)
     recent_bookings = cur.fetchall()
 
+    # Obtain all room type information for use in displaying the price management list.
+    cur.execute("SELECT * FROM Room_Types ORDER BY type_id")
+    all_room_types = cur.fetchall()
+    
     conn.close()
 
     return render_template(
@@ -507,8 +511,43 @@ def dashboard():
         status_labels=status_labels,
         status_values=status_values,
         # Lists
-        recent_bookings=recent_bookings
+        recent_bookings=recent_bookings,
+        # All room types for price management
+        all_room_types=all_room_types
     )
+
+
+# ============================================
+# Part 7: Admin Actions (Update Price)
+# ============================================
+@app.route('/admin/update_price', methods=['POST'])
+def update_price():
+    # Strict Access Control
+    if 'user_name' not in session or session.get('role') != 'Manager':
+        flash('Access Denied.', 'danger')
+        return redirect(url_for('index'))
+
+    type_id = request.form.get('type_id')
+    new_price = request.form.get('new_price')
+
+    if not type_id or not new_price:
+        flash('Invalid input.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Update the price in Room_Types
+        cur.execute("UPDATE Room_Types SET price = %s WHERE type_id = %s", (new_price, type_id))
+        conn.commit()
+        
+        conn.close()
+        flash('Price updated successfully!', 'success')
+    except Exception as e:
+        flash(f'Error updating price: {str(e)}', 'danger')
+
+    return redirect(url_for('dashboard'))
 
 
 if __name__ == '__main__':
