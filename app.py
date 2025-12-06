@@ -65,33 +65,80 @@ def index():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Get sort parameter from URL, default is 'default'
+    # 1. 获取搜索参数
     sort_order = request.args.get('sort', 'default')
+    search_type = request.args.get('search_type')
+    min_price = request.args.get('min_price')
+    max_price = request.args.get('max_price')
+    search_in = request.args.get('check_in')
+    search_out = request.args.get('check_out')
 
-    # Base query: list room types with available count
-    query = """
+    # 2. 准备查询参数列表
+    query_params = []
+
+    # 3. 构建可用性子查询 (Core Logic)
+    # 如果用户选择了日期，我们需要排除掉在该日期范围内已有预订的房间
+    if search_in and search_out:
+        # 逻辑：总房间数 - 冲突房间数
+        # 冲突定义：Reservation 的时间段与搜索时间段有重叠
+        # Overlap: (ResStart < SearchEnd) AND (ResEnd > SearchStart)
+        availability_subquery = """
+            (SELECT COUNT(*) FROM Rooms r
+             WHERE r.type_id = t.type_id
+             AND r.room_number NOT IN (
+                SELECT res.room_number FROM Reservations res
+                WHERE res.status <> 'Cancelled'
+                AND res.check_in_date < %s AND res.check_out_date > %s
+             )
+            )
+        """
+        query_params.extend([search_out, search_in])
+    else:
+        # 如果没选日期，仅统计当前物理状态为 Available 的房间
+        availability_subquery = """
+            (SELECT COUNT(*) FROM Rooms r
+             WHERE r.type_id = t.type_id AND r.status = 'Available')
+        """
+
+    # 4. 构建主查询
+    sql = f"""
         SELECT
             t.type_id,
             t.type_name,
             t.price,
             t.description,
-            COUNT(r.room_number) AS available_count
+            {availability_subquery} AS available_count
         FROM Room_Types t
-        LEFT JOIN Rooms r
-            ON r.type_id = t.type_id AND r.status = 'Available'
-        GROUP BY t.type_id, t.type_name, t.price, t.description
+        WHERE 1=1
     """
 
-    # Append sorting logic based on user selection
-    if sort_order == 'price_asc':
-        query += " ORDER BY t.price ASC"
-    elif sort_order == 'price_desc':
-        query += " ORDER BY t.price DESC"
-    else:
-        query += " ORDER BY t.type_name ASC"
+    # 5. 应用筛选条件
+    if search_type and search_type != '':
+        sql += " AND t.type_id = %s"
+        query_params.append(search_type)
+    
+    if min_price:
+        sql += " AND t.price >= %s"
+        query_params.append(min_price)
+        
+    if max_price:
+        sql += " AND t.price <= %s"
+        query_params.append(max_price)
 
-    cursor.execute(query)
+    # 6. 应用排序
+    if sort_order == 'price_asc':
+        sql += " ORDER BY t.price ASC"
+    elif sort_order == 'price_desc':
+        sql += " ORDER BY t.price DESC"
+    else:
+        sql += " ORDER BY t.type_name ASC"
+
+    # 执行查询
+    cursor.execute(sql, query_params)
     room_types = cursor.fetchall()
+
+    cursor.execute("SELECT type_id, type_name FROM Room_Types ORDER BY type_id")
+    all_types_dropdown = cursor.fetchall()
 
     # Compute discount multiplier for the logged-in guest (if any)
     discount_multiplier = 1.0
@@ -107,9 +154,12 @@ def index():
     return render_template(
         'index.html',
         room_types=room_types,
+        all_types_dropdown=all_types_dropdown, # 传递给前端做下拉框
         user_name=user_name,
         discount_multiplier=discount_multiplier,
-        today=today_str
+        today=today_str,
+        # 把搜索参数传回前端，以便在输入框中保留显示
+        search_params=request.args
     )
 
 
@@ -141,8 +191,23 @@ def login():
 
         # Case A: User is a Guest
         if guest:
-            # Verify password hash
-            if bcrypt.check_password_hash(guest['password'], password_candidate):
+            stored_pass = guest['password']
+            password_ok = False
+
+            # [Fix] 1. Try Plain Text Match First (Compatible with 'default_pass' or '123')
+            if stored_pass == password_candidate:
+                password_ok = True
+            else:
+                # [Fix] 2. Try Bcrypt Match (Safe guard against Invalid Salt crash)
+                try:
+                    if bcrypt.check_password_hash(stored_pass, password_candidate):
+                        password_ok = True
+                except ValueError:
+                    # This happens if 'stored_pass' is not a valid hash (e.g. truncated or plain text)
+                    # We treat this as a failed login attempt instead of crashing
+                    pass
+
+            if password_ok:
                 session['user_id'] = guest['guest_id']
                 session['user_name'] = guest['first_name']
                 session['role'] = 'Guest'
@@ -156,16 +221,14 @@ def login():
             stored_pass = employee['password']
             password_ok = False
 
-            # Compatibility check for old plaintext passwords (e.g. '123')
             if stored_pass == password_candidate:
                 password_ok = True
             else:
-                # Attempt to verify as hash
                 try:
                     if bcrypt.check_password_hash(stored_pass, password_candidate):
                         password_ok = True
-                except Exception:
-                    pass  # Not a valid hash
+                except ValueError:
+                    pass
 
             if password_ok:
                 session['user_id'] = employee['employee_id']

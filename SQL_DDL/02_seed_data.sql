@@ -53,15 +53,15 @@ INSERT INTO Tier_Benefits (tier_id, amenity_id, access_level) VALUES
 -- Password is '123' (Hashed with Bcrypt)
 INSERT INTO Employees (username, role, password)
 VALUES
-('admin_xiaoyue', 'Manager', '$2b$12$Mo.isVEk5wE8IbWJ7ntDQuF2rWuOyGvUj3jXb85NKLa/upUgSv9N6'),
+('admin_xiaoyue', 'Manager', '123');
 
 -- ========================================================
 -- 3. Data Generation for Dashboard (History Data)
 -- ========================================================
 
 -- Generate Numbers Helper
-DROP TEMPORARY TABLE IF EXISTS tmp_nums;
-CREATE TEMPORARY TABLE tmp_nums (n INT PRIMARY KEY) ENGINE=MEMORY;
+DROP TABLE IF EXISTS tmp_nums;
+CREATE TABLE tmp_nums (n INT PRIMARY KEY);
 INSERT INTO tmp_nums (n) VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 
 -- Generate 50 Guests
@@ -70,8 +70,10 @@ SELECT
   CONCAT('Guest', LPAD(a.n*10 + b.n, 3, '0')) AS first_name,
   'User' AS last_name,
   CONCAT('user', LPAD(a.n*10 + b.n, 3, '0'), '@example.com') AS email,
+  '555-0199' AS phone,            -- Added default phone
+  'default_pass' AS password,     -- Added default plain text password
   ((a.n*10 + b.n) % 5) + 1 AS tier_id,
-  'Guest'
+  'Guest' AS role
 FROM tmp_nums a JOIN tmp_nums b ON 1=1
 WHERE a.n*10 + b.n < 50;
 
@@ -103,7 +105,7 @@ JOIN Room_Types rt ON r.type_id = rt.type_id
 WHERE g.guest_id <= 40; -- Create 40 past reservations
 
 -- Cleanup
-DROP TEMPORARY TABLE IF EXISTS tmp_nums;
+DROP TABLE IF EXISTS tmp_nums;
 
 -- Final Check
 SELECT 'Data Seeded Successfully' AS Status;
