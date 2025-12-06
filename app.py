@@ -210,7 +210,25 @@ def register():
         email = request.form['email']
         phone = request.form['phone']
         password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        
+        # Confirm the passwords match
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('register'))
+        # Enforce password strength
+        special_characters = " !@#$%^&*()_+-=[]{};':\"\\|,.<>/?"
+        
+        has_lower = any(c.islower() for c in password)
+        has_upper = any(c.isupper() for c in password)
+        has_digit = any(c.isdigit() for c in password)
+        has_special = any(c in special_characters for c in password)
+        is_long_enough = len(password) >= 8
 
+        if not (is_long_enough and has_lower and has_upper and has_digit and has_special):
+            flash('Password is too weak! It must be at least 8 chars long and include uppercase, lowercase, numbers, and symbols.', 'danger')
+            return redirect(url_for('register'))
+        
         # Hash the password before storing
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
