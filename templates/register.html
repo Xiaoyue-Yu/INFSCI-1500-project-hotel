@@ -62,14 +62,14 @@
             const val = passwordInput.value;
             let score = 0;
     
-            // 评分规则
-            if (val.length >= 8) score++; // 长度够
-            if (/[A-Z]/.test(val)) score++; // 有大写
-            if (/[a-z]/.test(val)) score++; // 有小写
-            if (/[0-9]/.test(val)) score++; // 有数字
-            if (/[^A-Za-z0-9]/.test(val)) score++; // 有特殊符号
+            // scoring criteria
+            if (val.length >= 8) score++; // length >= 8
+            if (/[A-Z]/.test(val)) score++; // with uppercase
+            if (/[a-z]/.test(val)) score++; // with lowercase
+            if (/[0-9]/.test(val)) score++; // with number
+            if (/[^A-Za-z0-9]/.test(val)) score++; // with special character
     
-            // 根据分数显示状态
+            // update strength bar and text
             if (val.length === 0) {
                 strengthBar.style.width = '0%';
                 strengthBar.className = 'progress-bar';
@@ -77,19 +77,19 @@
             } else if (score < 3) {
                 // Weak
                 strengthBar.style.width = '30%';
-                strengthBar.className = 'progress-bar bg-danger'; // 红色
+                strengthBar.className = 'progress-bar bg-danger'; // red
                 strengthText.textContent = 'Weak';
                 strengthText.className = 'text-danger small';
             } else if (score < 5) {
                 // Medium
                 strengthBar.style.width = '60%';
-                strengthBar.className = 'progress-bar bg-warning'; // 黄色
+                strengthBar.className = 'progress-bar bg-warning'; // yellow
                 strengthText.textContent = 'Medium';
                 strengthText.className = 'text-warning small';
             } else {
-                // Strong (必须满足所有条件才能算Strong，或者 >=5分)
+                // Strong (score === 5, all criteria met)
                 strengthBar.style.width = '100%';
-                strengthBar.className = 'progress-bar bg-success'; // 绿色
+                strengthBar.className = 'progress-bar bg-success'; // green
                 strengthText.textContent = 'Strong';
                 strengthText.className = 'text-success small';
             }
