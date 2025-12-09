@@ -74,6 +74,61 @@
             </div>
         </div>
 
+        {% if session.get('role') == 'Guest' %}
+        <div class="history-card">
+            <div class="history-header d-flex justify-content-between">
+                <span>📜 My Reservation History</span>
+                <span class="badge bg-white text-success">{{ transaction_history|length }} Records</span>
+            </div>
+            
+            {% if transaction_history and transaction_history|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">#ID</th>
+                            <th>Room Type</th>
+                            <th>Room No.</th>
+                            <th>Check-In</th>
+                            <th>Check-Out</th>
+                            <th>Total Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transaction_history %}
+                        <tr>
+                            <td class="ps-4 text-muted">#{{ t.reservation_id }}</td>
+                            <td class="fw-bold">{{ t.type_name }}</td>
+                            <td>{{ t.room_number }}</td>
+                            <td>{{ t.check_in_date }}</td>
+                            <td>{{ t.check_out_date }}</td>
+                            <td class="text-primary fw-bold">${{ ('%.2f'|format(t.total_price)) }}</td>
+                            <td>
+                                {% if t.status == 'Booked' %}
+                                    <span class="badge bg-warning text-dark">Booked</span>
+                                {% elif t.status == 'Completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif t.status == 'Cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ t.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-5 text-center text-muted bg-light">
+                <h5 class="text-secondary">🤷‍♂️ No reservation record was found.</h5>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+
         <div class="search-card">
             <form action="/" method="GET">
                 <div class="row g-3 align-items-end">
