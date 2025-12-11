@@ -12,7 +12,7 @@ bcrypt = Bcrypt(app)
 # Database Configuration
 db_config = {
     'user': 'root',
-    'password': 'Sunboy-5',  # TODO: Update with your local MySQL password
+    'password': 'abcd',  # TODO: Update with your local MySQL password
     'host': 'localhost',
     'database': 'hotel_project'
 }
@@ -144,19 +144,23 @@ def index():
         user_id = session['user_id']
         discount_multiplier = get_discount_multiplier_for_user(user_id, conn)
         history_query = """
-           SELECT 
+            SELECT 
                 r.reservation_id,
                 r.check_in_date,
                 r.check_out_date,
                 r.total_price,
                 r.status,
-                r.room_number
-            FROM Reservations r            
+                r.room_number,
+                rt.type_name
+            FROM Reservations r
+            LEFT JOIN Rooms rm ON r.room_number = rm.room_number
+            LEFT JOIN Room_Types rt ON rm.type_id = rt.type_id
             WHERE r.guest_id = %s
             ORDER BY r.reservation_id DESC
         """
         cursor.execute(history_query, (user_id,))
         transaction_history = cursor.fetchall()
+        
         print(f"--- Debug: User {user_id} History ---")
         print(f"Records found: {len(transaction_history)}")
         for item in transaction_history:
