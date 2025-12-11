@@ -12,7 +12,7 @@ bcrypt = Bcrypt(app)
 # Database Configuration
 db_config = {
     'user': 'root',
-    'password': 'abcd',  # TODO: Update with your local MySQL password
+    'password': 'Sunboy-5',  # TODO: Update with your local MySQL password
     'host': 'localhost',
     'database': 'hotel_project'
 }
